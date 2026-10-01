@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinetry Quote Calculator - Print Ready (Refined, Responsive)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-dark': '#1f2937', // Gray-800
+                        'accent': '#059669', // Vibrant Emerald Green
+                        'nav-dark': '#0f172a', 
+                        'nav-text': '#f3f4f6',
+                        'active-yellow': '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for better mobile experience and printing */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            padding-top: 0px; 
+        }
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Hide the receipt view on screen by default */
+        #print-receipt {
+            display: none;
+            min-height: 10vh;
+        }
+
+        /* NEW: Photo Options Styling (Input Area) */
+        .thumbnail-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px; /* Increased slightly to make room for remove buttons */
+            margin-top: 12px;
+        }
+        
+        /* UPDATED: Thumbnail styling to keep natural aspect ratio */
+        .thumbnail {
+            height: 80px;
+            width: auto;
+            max-width: 150px;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            /* --- FIX for broken image (HEIC/HEIF) display --- */
+            color: transparent; 
+            text-indent: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Fallback for images that fail to load (like HEIC on non-native browsers) */
+        .thumbnail:not([src])::after {
+            content: "HEIC/File";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #4b5563; 
+            background-color: #fca5a5; /* Light red background for visibility */
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            text-indent: 0;
+            white-space: normal;
+            overflow: visible;
+        }
+        
+        /* NEW: Receipt Photo Styling (Display Area) - UPDATED aspect ratio */
+        .receipt-photo-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center; /* Center photos on the receipt */
+        }
+        .receipt-photo {
+            height: 200px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+        }
+
+        /* --- PRINT STYLES for PDF Receipt --- */
+        @media print {
+            /* Hide the input form, print controls, and the main site header (#site-header) when printing */
+            #app-input, #print-controls {
+                display: none !important;
+            }
+
+            body { 
+                padding-top: 0; 
+                background-color: white;
+            }
+            /* Make the receipt fill the page */
+            #print-receipt {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                padding: 0;
+                margin: 0;
+                box-shadow: none !important;
+                background-color: white !important;
+                font-family: 'Inter', sans-serif;
+                font-size: 10pt; 
+            }
+            /* Style to match the screenshot's receipt line items */
+            .receipt-line-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding: 4px 0;
+                border-bottom: 1px dashed #e5e7eb; /* Light dash for separation */
+            }
+            .receipt-section-header {
+                font-size: 1.1rem; /* Slightly larger than line items */
+                font-weight: 700;
+                color: #1f2937;
+                border-bottom: 3px solid #059669; /* Thick green line */
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+            }
+            /* Force colors to print */
+            .receipt-total-bar {
+                background-color: #ecfdf5 !important; /* light green */
+                border: 2px solid #059669 !important; /* Stronger green border */
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            /* Ensure text for prices prints black */
+            .price-display {
+                color: #1f2937 !important; 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* RULE TO ENSURE DARK TEXT PRINTS BLACK (including company details) */
+            .text-primary-dark { 
+                color: #000000 !important; 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* Ensure the receipt's own header is NOT hidden */
+            #print-receipt header {
+                display: block !important;
+            }
+            /* RUSH Fee styling */
+            .is-rush-fee {
+                background-color: #fef2f2 !important; 
+                border-left: 4px solid #ef4444; 
+                padding-left: 10px !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            /* Discount styling */
+            .is-discount {
+                background-color: #d1fae5 !important; 
+                border-left: 4px solid #059669; 
+                padding-left: 10px !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            /* NEW: Photo Thumbnail styling for printing */
+            .receipt-photo {
+                height: 200px !important;
+                width: auto !important;
+                max-width: 100% !important;
+                break-inside: avoid; /* Prevent images from being cut across pages */
+                page-break-inside: avoid;
+            }
+
+            h1, h2, h3 { color: #1f2937 !important; }
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen">
+    
+    <div class="p-4 flex justify-center items-start mt-4">
+        <div id="app-input" class="w-full max-w-lg lg:max-w-6xl bg-white rounded-xl p-6 card">
+            <h1 class="text-3xl font-bold text-primary-dark mb-2 text-center">Cabinet Rebuild Quote</h1>
+            <p class="text-center text-gray-500 mb-8">Enter details and quantities below to generate your printable quote.</p>
+            
+            <div id="job-details" class="space-y-4 mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h2 class="text-xl font-semibold text-primary-dark border-b pb-2 text-accent">Job Details</h2>
+                
+                <div class="job-input">
+                    <label for="company-name" class="block text-sm font-medium text-gray-700">Company</label>
+                    <input type="text" id="company-name" placeholder="E.g., ABC Contractors" 
+                           class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                </div>
+                
+                <div class="job-input">
+                    <label for="project-manager" class="block text-sm font-medium text-gray-700">Project Manager Name</label>
+                    <input type="text" id="project-manager" placeholder="E.g., John Doe" 
+                           class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                </div>
+                
+                <div class="job-input">
+                    <label for="job-name" class="block text-sm font-medium text-gray-700">Job Name/Number</label>
+                    <input type="text" id="job-name" placeholder="E.g., 2024-001 or Jane Smith" 
+                           class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                </div>
+                
+                <div class="job-input">
+                    <label for="job-address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <input type="text" id="job-address" placeholder="123 Main St, Anytown, USA" 
+                           class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                </div>
+
+                <div class="job-input grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="client-phone" class="block text-sm font-medium text-gray-700">Project Manager's Phone</label>
+                        <input type="tel" id="client-phone" placeholder="(555) 555-5555" 
+                               class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                    </div>
+                    <div>
+                        <label for="job-date" class="block text-sm font-medium text-gray-700">Quote Date</label>
+                        <input type="date" id="job-date" 
+                               class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                    </div>
+                </div>
+                
+                <div class="job-input pt-4 border-t border-gray-200">
+                    <label for="job-notes" class="block text-sm font-medium text-gray-700">Job Notes (Appears on Quote)</label>
+                    <textarea id="job-notes" rows="3" placeholder="E.g., Sending a sheet to build angled box on-site.
+Installed glides, but don't have drawers to test." 
+                              class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent"></textarea>
+                </div>
+
+                <div class="job-input pt-4 border-t border-gray-200">
+                    <label for="price-multiplier" class="block text-sm font-medium text-gray-700">Overall Price Multiplier (Hidden on Receipt)</label>
+                    <input type="number" id="price-multiplier" value="1.0" step="0.1" min="0" onchange="calculateTotal()"
+                           class="mt-1 block w-full sm:w-1/2 p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent">
+                </div>
+                
+                <div class="job-input pt-4 border-t border-gray-200">
+                    <div class="flex items-start mb-2">
+                        <input type="checkbox" id="checkbox-rushed" 
+                               class="mt-1 h-5 w-5 text-red-600 border-gray-300 rounded focus:ring-red-500" onchange="calculateTotal()">
+                        <label for="checkbox-rushed" class="ml-3 block text-lg font-bold text-red-600">
+                            RUSHED
+                        </label>
+                    </div>
+                    <p class="text-sm text-red-700 italic font-medium -mt-1 p-2 bg-red-100 rounded-md">
+                        If cabinets are requested before our typical production time, an extra 50% fee will be incurred. <span class="font-bold">This fee applies only to the core cabinetry lineal-foot items.</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="lg:grid lg:grid-cols-2 lg:gap-8">
+                
+                <div class="space-y-6 mb-8 lg:mb-0">
+                    
+                    <h2 class="text-xl font-bold text-accent pt-4 border-t border-gray-200">Cabinetry & Shelving</h2>
+
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <label for="material-select" class="block text-sm font-medium text-gray-700 font-bold mb-1">Cabinet Box Material</label>
+                        <div class="flex items-center gap-4">
+                            <select id="material-select" onchange="applyMaterialPricing()"
+                                    class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent text-base font-semibold bg-white shadow-sm h-12">
+                                <option value="" disabled selected>--- Select Box Material ---</option> 
+                                <option value="Hardrock Maple">Hardrock Maple</option>
+                                <option value="White">White</option>
+                                <option value="Almond">Almond</option>
+                                <option value="Particle Board">Particle Board</option>
+                                <option value="Plywood">Plywood</option>
+                                <option value="Plywood (Stained Interior)">Plywood (Stained Interior)</option>
+                            </select>
+                            <div class="w-24 h-24 rounded border border-gray-300 bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center text-xs text-gray-500 text-center leading-tight">
+                                <img id="material-preview" src="" alt="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('material-preview-placeholder').classList.remove('hidden');">
+                                <span id="material-preview-placeholder" class="select-none p-1">No Image</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="input-base" class="block text-lg font-medium text-gray-700 mb-1">Base</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-base" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-base" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('base', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-base" type="button" onclick="resetCustomPrice('base')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-half-shelf" class="block text-lg font-medium text-gray-700 mb-1">Half-Depth Shelving</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-half-shelf" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-half-shelf" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('halfShelf', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-halfShelf" type="button" onclick="resetCustomPrice('halfShelf')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="input-base-install" class="block text-lg font-medium text-gray-700">Base with Installation</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="check-base-install" class="h-4 w-4 text-accent border-gray-300 rounded focus:ring-accent/70" onchange="updatePricesDisplay()">
+                                <label for="check-base-install" class="ml-1 text-sm font-medium text-gray-600 select-none">Under Countertops</label>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="number" id="input-base-install" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-base-install" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('baseInstall', this.value, 'check-base-install')">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-baseInstall" type="button" onclick="resetCustomPrice('baseInstall')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-full-height" class="block text-lg font-medium text-gray-700 mb-1">Full Height</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-height" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-height" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullHeight', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-fullHeight" type="button" onclick="resetCustomPrice('fullHeight')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-full-shelf" class="block text-lg font-medium text-gray-700 mb-1">Full-Depth Shelving</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-shelf" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-shelf" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullShelf', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-fullShelf" type="button" onclick="resetCustomPrice('fullShelf')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-full-height-install" class="block text-lg font-medium text-gray-700 mb-1">Full Height with Installation</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-height-install" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-height-install" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullHeightInstall', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-fullHeightInstall" type="button" onclick="resetCustomPrice('fullHeightInstall')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-base-european" class="block text-lg font-medium text-gray-700 mb-1">Base European</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-base-european" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-base-european" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('baseEuropean', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-baseEuropean" type="button" onclick="resetCustomPrice('baseEuropean')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="input-base-european-install" class="block text-lg font-medium text-gray-700">Base European w/ Install</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="check-base-european-install" class="h-4 w-4 text-accent border-gray-300 rounded focus:ring-accent/70" onchange="updatePricesDisplay()">
+                                <label for="check-base-european-install" class="ml-1 text-sm font-medium text-gray-600 select-none">Under Countertops</label>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="number" id="input-base-european-install" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-base-european-install" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('baseEuropeanInstall', this.value, 'check-base-european-install')">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-baseEuropeanInstall" type="button" onclick="resetCustomPrice('baseEuropeanInstall')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-full-height-european" class="block text-lg font-medium text-gray-700 mb-1">Full Height European</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-height-european" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-height-european" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullHeightEuropean', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-fullHeightEuropean" type="button" onclick="resetCustomPrice('fullHeightEuropean')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-full-height-european-install" class="block text-lg font-medium text-gray-700 mb-1">Full Height European w/ Install</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-height-european-install" data-unit="ft" placeholder="0.0" min="0" step="0.5"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-height-european-install" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullHeightEuropeanInstall', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ ft</span>
+                                <button id="reset-fullHeightEuropeanInstall" type="button" onclick="resetCustomPrice('fullHeightEuropeanInstall')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="input-full-sheets" class="block text-lg font-medium text-gray-700 mb-1">Full Sheets</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-sheets" data-unit="Sheet" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-sheets" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullSheets', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ Sheet</span>
+                                <button id="reset-fullSheets" type="button" onclick="resetCustomPrice('fullSheets')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+
+                    <h2 class="text-xl font-bold text-accent pt-4 border-t border-gray-200 lg:border-t-0">Staining and Accessories</h2>
+
+                    <div class="input-group p-3 bg-emerald-50 rounded-lg border border-emerald-200 space-y-2">
+                        <p class="text-sm font-semibold text-gray-800">Select required matching services (<span class="font-bold">$150 per service</span>):</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="checkbox-stain-match" class="h-5 w-5 text-accent border-gray-300 rounded focus:ring-accent/70" onchange="calculateTotal()">
+                                <label for="checkbox-stain-match" class="ml-2 text-sm font-medium text-gray-700 select-none">Stain</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="checkbox-paint-match" class="h-5 w-5 text-accent border-gray-300 rounded focus:ring-accent/70" onchange="calculateTotal()">
+                                <label for="checkbox-paint-match" class="ml-2 text-sm font-medium text-gray-700 select-none">Paint</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="checkbox-lacquer-match" class="h-5 w-5 text-accent border-gray-300 rounded focus:ring-accent/70" onchange="calculateTotal()">
+                                <label for="checkbox-lacquer-match" class="ml-2 text-sm font-medium text-gray-700 select-none">Lacquer</label>
+                            </div>
+                        </div>
+                        <p id="match-fee-status" class="text-center font-bold text-red-600 text-sm pt-2 border-t border-emerald-300 hidden"></p>
+                    </div>
+                    
+                    <div class="input-group p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <label for="finished-material-select" class="block text-sm font-medium text-gray-700 font-bold mb-1">Finished Material</label>
+                        <div class="flex items-center gap-4">
+                            <select id="finished-material-select"
+                                    class="flex-1 p-2 border border-gray-300 rounded-md focus:ring-accent focus:border-accent text-base font-semibold bg-white shadow-sm h-12" onchange="updateFinishedMaterialPreview(); calculateTotal();">
+                                <option value="" disabled selected>--- Select Finished Material ---</option> 
+                                <option value="Maple">Maple</option>
+                                <option value="Oak">Oak</option>
+                                <option value="Cherry">Cherry</option>
+                                <option value="Alder (clear)">Alder (clear)</option>
+                                <option value="Alder (knotty)">Alder (knotty)</option>
+                                <option value="Hickory">Hickory</option>
+                                <option value="White">White</option>
+                                <option value="MDF">MDF</option>
+                                <option value="Almond">Almond</option>
+                                <option value="Hardrock">Hardrock</option>
+                            </select>
+                            <div class="w-24 h-24 rounded border border-gray-300 bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center text-xs text-gray-500 text-center leading-tight">
+                                <img id="finished-material-preview" src="" alt="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('finished-material-preview-placeholder').classList.remove('hidden');">
+                                <span id="finished-material-preview-placeholder" class="select-none p-1">No Image</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-base-skins" class="block text-lg font-medium text-gray-700 mb-1">Base/Wall Skins</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-base-skins" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-base-skins" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('baseSkins', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-baseSkins" type="button" onclick="resetCustomPrice('baseSkins')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-full-skins" class="block text-lg font-medium text-gray-700 mb-1">Full Height Skin / Back Panel</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-full-skins" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-full-skins" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fullSkins', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-fullSkins" type="button" onclick="resetCustomPrice('fullSkins')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-toekick" class="block text-lg font-medium text-gray-700 mb-1">Toekick (8ft)</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-toekick" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-toekick" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('toekick', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-toekick" type="button" onclick="resetCustomPrice('toekick')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-fillers" class="block text-lg font-medium text-gray-700 mb-1">Fillers</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-fillers" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-fillers" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('fillers', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-fillers" type="button" onclick="resetCustomPrice('fillers')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="input-scribe" class="block text-lg font-medium text-gray-700 mb-1">Scribe (8ft)</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-scribe" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-scribe" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('scribe', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-scribe" type="button" onclick="resetCustomPrice('scribe')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="input-batten" class="block text-lg font-medium text-gray-700 mb-1">Batten (36")</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-batten" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-batten" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('batten', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-batten" type="button" onclick="resetCustomPrice('batten')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-mid-scribe" class="block text-lg font-medium text-gray-700 mb-1">1-1/4" Scribe (8ft)</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-mid-scribe" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-mid-scribe" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('midScribe', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-midScribe" type="button" onclick="resetCustomPrice('midScribe')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-outside-scribe" class="block text-lg font-medium text-gray-700 mb-1">Outside Corner Scribe (8ft)</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-outside-scribe" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-outside-scribe" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('outsideCornerScribe', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-outsideCornerScribe" type="button" onclick="resetCustomPrice('outsideCornerScribe')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="input-quarter-scribe" class="block text-lg font-medium text-gray-700 mb-1">Quarter-Round Scribe (8ft)</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-quarter-scribe" data-unit="PC" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-quarter-scribe" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('quarterRoundScribe', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ PC</span>
+                                <button id="reset-quarterRoundScribe" type="button" onclick="resetCustomPrice('quarterRoundScribe')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="input-glides-set" class="block text-lg font-medium text-gray-700 mb-1">New Sets of Glides</label>
+                        <div class="flex items-center">
+                            <input type="number" id="input-glides-set" data-unit="SET" placeholder="0" min="0" step="1"
+                                   class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:ring-accent focus:border-accent text-xl transition duration-150">
+                            <div class="relative flex items-center bg-gray-100 border border-gray-300 border-l-0 rounded-r-lg">
+                                <span class="pl-3 py-3 text-gray-600 text-base font-semibold select-none">$</span>
+                                <input type="number" id="display-glides-set" step="0.01" class="w-12 sm:w-16 p-0 py-3 bg-transparent text-gray-700 text-base font-semibold border-none focus:ring-0 text-center m-0" onchange="setCustomPrice('glidesSet', this.value)">
+                                <span class="pr-3 py-3 text-gray-600 text-base font-semibold select-none">/ SET</span>
+                                <button id="reset-glidesSet" type="button" onclick="resetCustomPrice('glidesSet')" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs items-center justify-center hidden hover:bg-red-600 shadow-md transition-colors z-10" title="Reset Price">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group pt-4 border-t border-gray-200">
+                        <h3 class="block text-lg font-bold text-gray-700 mb-2">
+                            New Lazy Susan Hardware
+                        </h3>
+                        
+                        <p class="text-sm text-gray-500 mb-4 flex items-center justify-between sm:justify-start">
+                            Replacement hardware for lazy susans.
+                            <label for="radio-lazy-susan-none" class="ml-4 flex items-center text-gray-700 font-semibold cursor-pointer select-none">
+                                <input type="radio" id="radio-lazy-susan-none" name="lazy-susan" value="none" checked
+                                       class="h-5 w-5 text-gray-600 border-gray-300 rounded-full focus:ring-gray-500 mr-2" onchange="calculateTotal()">
+                                None
+                            </label>
+                        </p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            
+                            <div class="flex-1 p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200 shadow-sm transition hover:shadow-md">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="radio-lazy-susan-wood" name="lazy-susan" value="wood"
+                                               class="h-6 w-6 text-yellow-600 border-gray-300 rounded-full focus:ring-yellow-500" onchange="calculateTotal()">
+                                        <label for="radio-lazy-susan-wood" class="ml-3 block text-base font-bold text-gray-800 select-none">
+                                            Premium Wood Hardware
+                                        </label>
+                                    </div>
+                                    <span id="display-lazy-susan-wood" class="price-display text-xl font-extrabold text-yellow-600">$500</span>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 shadow-sm transition hover:shadow-md">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="radio-lazy-susan-plastic" name="lazy-susan" value="plastic"
+                                               class="h-6 w-6 text-blue-600 border-gray-300 rounded-full focus:ring-blue-500" onchange="calculateTotal()">
+                                        <label for="radio-lazy-susan-plastic" class="ml-3 block text-base font-bold text-gray-800 select-none">
+                                            Standard Plastic Hardware
+                                        </label>
+                                    </div>
+                                    <span id="display-lazy-susan-plastic" class="price-display text-xl font-extrabold text-blue-600">$200</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="custom-flat-rate-section" class="mt-8 pt-6 border-t border-gray-200">
+                <h2 class="text-xl font-bold text-accent mb-4">Custom Flat Rate Items</h2>
+                
+                <div class="input-group mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                    <label class="block text-lg font-semibold text-emerald-600 mb-3">Faceframe Repairs</label>
+                    <div class="flex flex-col sm:flex-row gap-3 items-start">
+                        <div class="flex-1 w-full flex flex-col gap-2">
+                            <input type="number" id="ff-sections" placeholder="Sections Damaged" min="0" step="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent" oninput="renderFFDropdowns()">
+                            <p class="text-xs text-gray-500 mt-1 mb-2">Number of distinct sections (stiles/rails) requiring repair.</p>
+                            <div id="ff-damage-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 empty:hidden"></div>
+                            <p id="ff-warning" class="text-sm font-bold text-red-600 hidden">Warning: Repair cost is $300 or more. Consider selecting "Whole Faceframe remake/refinish".</p>
+                        </div>
+                        <div class="flex items-center w-full sm:w-48">
+                            <span class="p-3 bg-gray-100 text-gray-600 font-semibold border border-gray-300 border-r-0 rounded-l-lg">$</span>
+                            <input type="number" id="ff-cost-input" placeholder="0.00" class="flex-1 p-3 border border-gray-300 focus:ring-accent focus:border-accent transition duration-150 font-bold border-l-0 rounded-r-lg">
+                        </div>
+                        <button type="button" onclick="addFaceframe()" class="w-full sm:w-auto p-3 font-bold text-white bg-accent rounded-lg hover:bg-emerald-700 transition duration-150 shadow-md">Add</button>
+                    </div>
+                </div>
+
+                <div class="input-group mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                    <label class="block text-lg font-semibold text-emerald-600 mb-3">Drawer Box Rebuild</label>
+                    <div class="flex flex-col sm:flex-row gap-3 items-start">
+                        <div class="flex-1 w-full flex gap-2">
+                            <input type="number" id="drawer-width" placeholder="Width (in)" class="w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent" oninput="updateDrawerCost()">
+                            <input type="number" id="drawer-depth" placeholder="Depth/Length (in)" class="w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent" oninput="updateDrawerCost()">
+                        </div>
+                        <div class="flex items-center w-full sm:w-48">
+                            <span class="p-3 bg-gray-100 text-gray-600 font-semibold border border-gray-300 border-r-0 rounded-l-lg">$</span>
+                            <input type="number" id="drawer-cost-input" placeholder="0.00" class="flex-1 p-3 border border-gray-300 focus:ring-accent focus:border-accent transition duration-150 font-bold border-l-0 rounded-r-lg">
+                        </div>
+                        <button type="button" onclick="addDrawerBox()" class="w-full sm:w-auto p-3 font-bold text-white bg-accent rounded-lg hover:bg-emerald-700 transition duration-150 shadow-md">Add</button>
+                    </div>
+                </div>
+
+                <div class="input-group p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                    <label class="block text-lg font-semibold text-emerald-600 mb-3">Line Items</label>
+                    
+                    <div id="custom-pricing-list" class="space-y-2 mb-4 empty:hidden"></div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 items-start border-t border-gray-200 pt-4 mt-2">
+                        <div class="flex-1 w-full">
+                            <input type="text" id="input-custom-desc" placeholder="E.g., Custom Item, Make New Door, Etc." 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent">
+                        </div>
+                        <div class="flex items-center w-full sm:w-48">
+                            <span class="p-3 bg-gray-100 text-gray-600 font-semibold border border-gray-300 border-r-0 rounded-l-lg">$</span>
+                            <input type="number" id="input-custom-price" placeholder="0.00" min="0" step="10"
+                                   class="flex-1 p-3 border border-gray-300 focus:ring-accent focus:border-accent transition duration-150 font-bold border-l-0 rounded-r-lg">
+                        </div>
+                        <button type="button" onclick="addCustomPriceItem()" 
+                                class="w-full sm:w-auto p-3 font-bold text-white bg-accent rounded-lg hover:bg-emerald-700 transition duration-150 shadow-md">
+                            Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="photo-options-section" class="mt-8 pt-6 border-t border-gray-200 p-4 bg-yellow-50 rounded-xl">
+                <h2 class="text-xl font-bold text-yellow-700 mb-4">Project Photos</h2>
+                <p class="text-sm text-yellow-700 italic mb-4">Try to document any existing or repaired damage, along with a basic reference photo for the job.</p>
+                <div class="flex space-x-4">
+                    <button type="button" onclick="document.getElementById('input-photos-file').click()" 
+                            class="flex-1 p-3 text-lg font-bold text-gray-800 bg-yellow-300 rounded-lg hover:bg-yellow-400 transition duration-150 shadow-md flex items-center justify-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Choose Files
+                    </button>
+
+                    <button type="button" onclick="document.getElementById('input-photos-camera').click()" 
+                            class="flex-1 p-3 text-lg font-bold text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition duration-150 shadow-md flex items-center justify-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.218A2 2 0 0110.153 4h3.694a2 2 0 011.664.89l.812 1.218A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Take Photo
+                    </button>
+                </div>
+                
+                <input type="file" id="input-photos-file" multiple accept="image/*,.heic,.heif" class="hidden" onchange="handleNewPhoto(this)">
+                <input type="file" id="input-photos-camera" multiple accept="image/*,.heic,.heif" capture="camera" class="hidden" onchange="handleNewPhoto(this)">
+                
+                <div id="photo-thumbnails" class="thumbnail-container mt-4">
+                    </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-gray-200 p-4 bg-indigo-50 rounded-xl">
+                <h2 class="text-xl font-bold text-indigo-700 mb-4">Payment Method </h2>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <label for="payment-invoice" class="flex items-center flex-1 p-3 bg-white border border-indigo-300 rounded-lg cursor-pointer transition hover:bg-indigo-100/50 select-none">
+                        <input type="radio" id="payment-invoice" name="payment-method" value="Invoice" checked
+                               class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="calculateTotal()">
+                        <span class="ml-3 text-base font-semibold text-gray-800">Invoice / Card</span>
+                    </label>
+                    
+                    <label for="payment-cash" class="flex items-center flex-1 p-3 bg-white border border-indigo-300 rounded-lg cursor-pointer transition hover:bg-indigo-100/50 select-none">
+                        <input type="radio" id="payment-cash" name="payment-method" value="Cash"
+                               class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="calculateTotal()">
+                        <span class="ml-3 text-base font-semibold text-gray-800">Cash</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-200" id="print-controls">
+                <div id="quote-total" class="flex justify-between items-center bg-accent/10 p-4 rounded-xl">
+                    <span class="text-xl font-semibold text-primary-dark">TOTAL ESTIMATED COST:</span>
+                    <span id="total-cost" class="text-4xl font-extrabold text-accent">$0.00</span>
+                </div>
+                <div class="mt-4">
+                    <button id="print-quote-btn" class="w-full p-3 text-lg font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md">
+                        Print Quote (Save PDF)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-receipt" class="w-full max-w-2xl mx-auto">
+        </div>
+
+    <script>
+        // --- DOM Elements ---
+        const inputElements = document.querySelectorAll('#app-input input, #app-input select, #app-input textarea'); 
+        const totalCostEl = document.getElementById('total-cost');
+        const printBtn = document.getElementById('print-quote-btn');
+        const jobDateInput = document.getElementById('job-date');
+        const receiptContainer = document.getElementById('print-receipt');
+        const matchFeeStatusEl = document.getElementById('match-fee-status');
+        const materialSelect = document.getElementById('material-select');
+        const finishedMaterialSelect = document.getElementById('finished-material-select');
+        
+        // NEW: Photo Elements
+        const photoThumbnailsContainer = document.getElementById('photo-thumbnails');
+        // Stores objects: { name: string, url: string }
+        let uploadedPhotos = []; 
+
+        // Store the original title to reset the tab name after printing
+        const ORIGINAL_TITLE = 'Cabinetry Quote Calculator - Print Ready (Refined, Responsive)';
+
+        // Array to hold dynamic custom pricing items
+        let customPricingItems = [];
+
+        // --- Price Constants Definitions ---
+        const UNDER_COUNTERTOP_ADJUSTMENT = 25; // Constant for the new $25 fee
+        
+        const DEFAULT_PRICES = {
+            base: 90, halfShelf: 18, baseInstall: 155, fullHeight: 180, fullShelf: 36, fullHeightInstall: 310,
+            baseEuropean: 195, baseEuropeanInstall: 280, fullHeightEuropean: 285, fullHeightEuropeanInstall: 435,
+            baseSkins: 85, fullSkins: 170, toekick: 30, fillers: 50, matchFee: 150, scribe: 35,
+            batten: 20, midScribe: 50, outsideCornerScribe: 55, quarterRoundScribe: 55, glidesSet: 25, 
+            lazySusanWood: 500, lazySusanPlastic: 200, fullSheets: 50
+        };
+
+        const PLYWOOD_OVERRIDE_PRICES = {
+            base: 145, halfShelf: 29, baseInstall: 210, fullHeight: 288, fullShelf: 58, fullHeightInstall: 420,
+            baseEuropean: 312, baseEuropeanInstall: 397, fullHeightEuropean: 456, fullHeightEuropeanInstall: 606,
+            fullSheets: 100
+        };
+        
+        const PLYWOOD_STAINED_PRICES = {
+            base: 185, halfShelf: 37, baseInstall: 250, fullHeight: 367, fullShelf: 74, fullHeightInstall: 500,
+            baseEuropean: 398, baseEuropeanInstall: 483, fullHeightEuropean: 581, fullHeightEuropeanInstall: 731,
+            fullSheets: 130
+        };
+
+        let CURRENT_PRICES = {...DEFAULT_PRICES}; 
+        let CUSTOM_PRICES = {}; // Stores user price overrides
+
+        // Map linking input IDs to price keys and display IDs
+        const ITEM_MAP = [
+            // Lineal Foot Items (These are the 'Cabinetry & Shelving' items, subject to RUSH fee)
+            { id: 'input-base', priceKey: 'base', name: 'Base (Rebuild)', unit: 'ft', isLineal: true, displayId: 'display-base' },
+            { id: 'input-half-shelf', priceKey: 'halfShelf', name: 'Half-Depth Shelving', unit: 'ft', isLineal: true, displayId: 'display-half-shelf' },
+            // Base items keep the checkbox
+            { 
+                id: 'input-base-install', priceKey: 'baseInstall', name: 'Base w/ Installation', unit: 'ft', 
+                isLineal: true, displayId: 'display-base-install', checkboxId: 'check-base-install' 
+            },
+            { id: 'input-full-height', priceKey: 'fullHeight', name: 'Full Height (Rebuild)', unit: 'ft', isLineal: true, displayId: 'display-full-height' },
+            { id: 'input-full-shelf', priceKey: 'fullShelf', name: 'Full-Depth Shelving', unit: 'ft', isLineal: true, displayId: 'display-full-shelf' },
+            // MODIFIED: Full Height items removed checkboxId
+            { 
+                id: 'input-full-height-install', priceKey: 'fullHeightInstall', name: 'Full Height w/ Installation', unit: 'ft', 
+                isLineal: true, displayId: 'display-full-height-install' 
+            },
+            { id: 'input-base-european', priceKey: 'baseEuropean', name: 'Base European (Faceless)', unit: 'ft', isLineal: true, displayId: 'display-base-european' },
+            // Base items keep the checkbox
+            { 
+                id: 'input-base-european-install', priceKey: 'baseEuropeanInstall', name: 'Base European w/ Install', unit: 'ft', 
+                isLineal: true, displayId: 'display-base-european-install', checkboxId: 'check-base-european-install' 
+            },
+            { id: 'input-full-height-european', priceKey: 'fullHeightEuropean', name: 'Full Height European (Faceless)', unit: 'ft', isLineal: true, displayId: 'display-full-height-european' },
+            // MODIFIED: Full Height items removed checkboxId
+            { 
+                id: 'input-full-height-european-install', priceKey: 'fullHeightEuropeanInstall', name: 'Full Height European w/ Install', unit: 'ft', 
+                isLineal: true, displayId: 'display-full-height-european-install'
+            },
+            { id: 'input-full-sheets', priceKey: 'fullSheets', name: 'Full Sheets', unit: 'Sheet', isLineal: false, displayId: 'display-full-sheets' },
+            
+            // Accessory Items (Not subject to RUSH fee)
+            { id: 'input-base-skins', priceKey: 'baseSkins', name: 'Base/Wall Skins', unit: 'PC', isLineal: false, displayId: 'display-base-skins' },
+            { id: 'input-full-skins', priceKey: 'fullSkins', name: 'Full Height Skin / Back Panel', unit: 'PC', isLineal: false, displayId: 'display-full-skins' },
+            { id: 'input-toekick', priceKey: 'toekick', name: 'Toekick (8ft)', unit: 'PC', isLineal: false, displayId: 'display-toekick' },
+            { id: 'input-fillers', priceKey: 'fillers', name: 'Fillers', unit: 'PC', isLineal: false, displayId: 'display-fillers' },
+            { id: 'input-scribe', priceKey: 'scribe', name: 'Scribe (8ft)', unit: 'PC', isLineal: false, displayId: 'display-scribe' },
+            { id: 'input-batten', priceKey: 'batten', name: 'Batten (36")', unit: 'PC', isLineal: false, displayId: 'display-batten' }, 
+            { id: 'input-mid-scribe', priceKey: 'midScribe', name: '1-1/4" Scribe (8ft)', unit: 'PC', isLineal: false, displayId: 'display-mid-scribe' },
+            { id: 'input-outside-scribe', priceKey: 'outsideCornerScribe', name: 'Outside Corner Scribe (8ft)', unit: 'PC', isLineal: false, displayId: 'display-outside-scribe' },
+            { id: 'input-quarter-scribe', priceKey: 'quarterRoundScribe', name: 'Quarter-Round Scribe (8ft)', unit: 'PC', isLineal: false, displayId: 'display-quarter-scribe' },
+            { id: 'input-glides-set', priceKey: 'glidesSet', name: 'New Sets of Glides', unit: 'SET', isLineal: false, displayId: 'display-glides-set' }, 
+        ];
+
+        // --- Utility Functions ---
+        const getValue = (id, isNumber = true) => {
+            const el = document.getElementById(id);
+            if (!el) return isNumber ? 0 : '';
+            
+            if (el.type === 'checkbox' || el.type === 'radio') {
+                return el.checked;
+            }
+
+            if (isNumber) {
+                const value = +el.value;
+                return isNaN(value) ? 0 : value;
+            }
+            
+            return el.value || '';
+        };
+
+        const formatCurrency = (amount) => `${(amount || 0).toFixed(2)}`;
+
+        // --- Custom Pricing Functions ---
+        
+        window.renderFFDropdowns = () => {
+            const container = document.getElementById('ff-damage-container');
+            let numSections = parseInt(document.getElementById('ff-sections').value) || 0;
+            if (numSections < 0) numSections = 0;
+            if (numSections > 20) numSections = 20; // safe limit
+
+            const currentCount = container.children.length;
+
+            if (numSections > currentCount) {
+                for (let i = currentCount; i < numSections; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'flex flex-col';
+                    div.innerHTML = `
+                        <label class="text-xs text-gray-500 mb-1 font-semibold">Section ${i + 1}</label>
+                        <select class="p-2 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent text-sm bg-white ff-damage-select" onchange="updateFFCost()">
+                            <option value="20">Simple touch-up (marker/putty) - $20</option>
+                            <option value="50">Small break (epoxy/glue+clamp) - $50</option>
+                            <option value="100">Needs replaced - $100</option>
+                            <option value="300">Whole Faceframe remake/refinish - $300</option>
+                        </select>
+                    `;
+                    container.appendChild(div);
+                }
+            } else if (numSections < currentCount) {
+                for (let i = currentCount - 1; i >= numSections; i--) {
+                    container.removeChild(container.children[i]);
+                }
+            }
+            updateFFCost();
+        };
+
+        window.updateFFCost = () => {
+            const selects = document.querySelectorAll('.ff-damage-select');
+            let cost = 0;
+            let hasWholeRemake = false;
+
+            selects.forEach(select => {
+                const val = parseInt(select.value) || 0;
+                cost += val;
+                if (val === 300) hasWholeRemake = true;
+            });
+
+            const costInput = document.getElementById('ff-cost-input');
+            const warning = document.getElementById('ff-warning');
+
+            if (selects.length > 0) {
+                costInput.value = cost.toFixed(2);
+                if (cost >= 300 && !hasWholeRemake) {
+                    warning.classList.remove('hidden');
+                } else {
+                    warning.classList.add('hidden');
+                }
+            } else {
+                costInput.value = '';
+                warning.classList.add('hidden');
+            }
+        };
+
+        window.addFaceframe = () => {
+            const cost = parseFloat(document.getElementById('ff-cost-input').value);
+            if (!isNaN(cost) && cost > 0) {
+                const numSections = document.querySelectorAll('.ff-damage-select').length;
+                const desc = `Faceframe Repairs (${numSections} section${numSections > 1 ? 's' : ''})`;
+                customPricingItems.push({ description: desc, cost: cost });
+                
+                document.getElementById('ff-sections').value = '';
+                document.getElementById('ff-damage-container').innerHTML = '';
+                document.getElementById('ff-cost-input').value = '';
+                document.getElementById('ff-warning').classList.add('hidden');
+                
+                renderCustomPricingList();
+                calculateTotal();
+            }
+        };
+
+        window.updateDrawerCost = () => {
+            const w = parseFloat(document.getElementById('drawer-width').value) || 0;
+            const d = parseFloat(document.getElementById('drawer-depth').value) || 0;
+            if (w > 0 && d > 0) {
+                const cost = ((w + d) * 1.5) + 40;
+                document.getElementById('drawer-cost-input').value = cost.toFixed(2);
+            } else {
+                document.getElementById('drawer-cost-input').value = '';
+            }
+        };
+
+        window.addDrawerBox = () => {
+            const w = parseFloat(document.getElementById('drawer-width').value) || 0;
+            const d = parseFloat(document.getElementById('drawer-depth').value) || 0;
+            const cost = parseFloat(document.getElementById('drawer-cost-input').value);
+            if (!isNaN(cost) && cost > 0) {
+                const desc = `Drawer Box Rebuild (${w}" x ${d}")`;
+                customPricingItems.push({ description: desc, cost: cost });
+                document.getElementById('drawer-width').value = '';
+                document.getElementById('drawer-depth').value = '';
+                document.getElementById('drawer-cost-input').value = '';
+                renderCustomPricingList();
+                calculateTotal();
+            }
+        };
+
+        window.addCustomPriceItem = () => {
+            const descEl = document.getElementById('input-custom-desc');
+            const priceEl = document.getElementById('input-custom-price');
+            const desc = descEl.value.trim() || 'Custom Item';
+            const price = parseFloat(priceEl.value);
+
+            if (!isNaN(price) && price > 0) {
+                customPricingItems.push({ description: desc, cost: price });
+                descEl.value = '';
+                priceEl.value = '';
+                renderCustomPricingList();
+                calculateTotal();
+            } else {
+                alert("Please enter a valid price greater than 0.");
+            }
+        };
+
+        window.removeCustomPriceItem = (index) => {
+            customPricingItems.splice(index, 1);
+            renderCustomPricingList();
+            calculateTotal();
+        };
+
+        window.renderCustomPricingList = () => {
+            const listEl = document.getElementById('custom-pricing-list');
+            listEl.innerHTML = '';
+            customPricingItems.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center p-2 bg-white border border-gray-200 rounded-md shadow-sm';
+                itemDiv.innerHTML = `
+                    <span class="text-sm font-medium text-gray-700 break-words flex-1 pr-2">${item.description}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-gray-900">$${item.cost.toFixed(2)}</span>
+                        <button type="button" onclick="removeCustomPriceItem(${index})" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 rounded text-sm transition">X</button>
+                    </div>
+                `;
+                listEl.appendChild(itemDiv);
+            });
+        };
+        
+        // --- Photo Handling Logic (UPDATED FOR NEW BUTTONS) ---
+        
+        // NEW: Function to remove a photo and update the view
+        window.removePhoto = (index) => {
+            if (uploadedPhotos[index] && uploadedPhotos[index].url) {
+                URL.revokeObjectURL(uploadedPhotos[index].url);
+            }
+            uploadedPhotos.splice(index, 1);
+            redrawThumbnails();
+            calculateTotal();
+        };
+
+        // Function to redraw thumbnails from the uploadedPhotos array
+        const redrawThumbnails = () => {
+            photoThumbnailsContainer.innerHTML = ''; 
+            uploadedPhotos.forEach((photo, index) => {
+                // Wrapper to hold the thumbnail and the remove button
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative inline-block';
+
+                const img = document.createElement('img');
+                img.src = photo.url;
+                // Changed the alt text to be less verbose when it fails to load
+                img.alt = photo.name; 
+                img.title = photo.name;
+                img.classList.add('thumbnail');
+                
+                // Add the specific red "x" remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.innerHTML = '×';
+                removeBtn.title = 'Remove photo';
+                removeBtn.className = 'absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-sm flex items-center justify-center hover:bg-red-600 shadow-md transition-colors z-10 font-bold cursor-pointer leading-none border border-white';
+                removeBtn.onclick = (e) => {
+                    e.preventDefault();
+                    removePhoto(index);
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                photoThumbnailsContainer.appendChild(wrapper);
+            });
+        };
+
+        const handleNewPhoto = (inputElement) => {
+            const newFiles = Array.from(inputElement.files);
+            
+            // Clear the input value so the same file can be selected again 
+            inputElement.value = null; 
+            
+            // Process new files, **REMOVED THE 5-PHOTO LIMIT**
+            newFiles.forEach(file => {
+                // Explicitly check for HEIC/HEIF MIME types or file extension
+                const isImage = file.type.startsWith('image/');
+                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+                
+                if (isImage || isHeic) {
+                    const url = URL.createObjectURL(file);
+                    uploadedPhotos.push({
+                        name: file.name,
+                        url: url,
+                    });
+                } else {
+                    console.warn(`File ${file.name} is not a supported image/HEIC type and was skipped.`);
+                }
+            });
+            
+            redrawThumbnails(); // Update the display
+            calculateTotal(); // Recalculate to update receipt content
+        };
+
+        // --- Price Override Handling ---
+        window.setCustomPrice = (key, value, checkboxId) => {
+            let val = parseFloat(value);
+            if (!isNaN(val)) {
+                // If checking out a field with a checkbox, deduct adjustment to store base price
+                if (checkboxId && getValue(checkboxId, false)) {
+                    val -= UNDER_COUNTERTOP_ADJUSTMENT;
+                }
+                CUSTOM_PRICES[key] = val;
+                updatePricesDisplay();
+            }
+        };
+
+        window.resetCustomPrice = (key) => {
+            delete CUSTOM_PRICES[key];
+            updatePricesDisplay();
+        };
+
+        // --- Dynamic Pricing and Display Updates ---
+        const updatePricesDisplay = () => {
+            ITEM_MAP.forEach(item => {
+                const displayEl = document.getElementById(item.displayId);
+                if (displayEl && item.unit) {
+                    // Start with the base price derived from current material selection
+                    let baseRate = CURRENT_PRICES[item.priceKey];
+                    // Check if user has applied a custom override price
+                    let price = CUSTOM_PRICES[item.priceKey] !== undefined ? CUSTOM_PRICES[item.priceKey] : baseRate;
+                    
+                    if (typeof price === 'number') {
+                        // Apply active checkbox adjustments on top
+                        if (item.checkboxId && getValue(item.checkboxId, false)) {
+                            price += UNDER_COUNTERTOP_ADJUSTMENT;
+                        }
+                        
+                        if (displayEl.tagName === 'INPUT') {
+                            displayEl.value = price.toFixed(0);
+                            
+                            // Manage reset button visibility and styling if custom price is set
+                            const resetBtn = document.getElementById('reset-' + item.priceKey);
+                            if (resetBtn) {
+                                if (CUSTOM_PRICES[item.priceKey] !== undefined) {
+                                    resetBtn.classList.remove('hidden');
+                                    resetBtn.classList.add('flex');
+                                    displayEl.classList.add('text-blue-600', 'font-bold');
+                                    displayEl.classList.remove('text-gray-700');
+                                } else {
+                                    resetBtn.classList.add('hidden');
+                                    resetBtn.classList.remove('flex');
+                                    displayEl.classList.remove('text-blue-600', 'font-bold');
+                                    displayEl.classList.add('text-gray-700');
+                                }
+                            }
+                        } else {
+                            displayEl.textContent = `$${price.toFixed(0)} / ${item.unit}`;
+                        }
+                    }
+                }
+            });
+            const woodDisplay = document.getElementById('display-lazy-susan-wood');
+            if(woodDisplay) {
+                woodDisplay.textContent = `$${CURRENT_PRICES.lazySusanWood.toFixed(0)}`; 
+            }
+            const plasticDisplay = document.getElementById('display-lazy-susan-plastic');
+            if(plasticDisplay) {
+                plasticDisplay.textContent = `$${CURRENT_PRICES.lazySusanPlastic.toFixed(0)}`; 
+            }
+            calculateTotal(); 
+        };
+
+        // --- Material Dropdown Preview Image Logic ---
+        const updatePreviewImage = (selectEl, imgId, placeholderId) => {
+            const val = selectEl.value;
+            const imgEl = document.getElementById(imgId);
+            const placeholderEl = document.getElementById(placeholderId);
+            
+            if (val) {
+                // Adjust extension here if you decide to use .png instead of .jpg
+                imgEl.src = `Images/rebuildPreviews/${val}.jpg`; 
+                
+                imgEl.classList.remove('hidden');
+                if(placeholderEl) placeholderEl.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                if(placeholderEl) placeholderEl.classList.remove('hidden');
+            }
+        };
+
+        const applyMaterialPricing = () => {
+            const selectedMaterial = materialSelect.value;
+            
+            // Update preview image
+            updatePreviewImage(materialSelect, 'material-preview', 'material-preview-placeholder');
+
+            // Only apply special pricing if a valid option (not the empty "") is selected.
+            if (selectedMaterial === 'Plywood') {
+                CURRENT_PRICES = {...DEFAULT_PRICES, ...PLYWOOD_OVERRIDE_PRICES};
+            } else if (selectedMaterial === 'Plywood (Stained Interior)') {
+                CURRENT_PRICES = {...DEFAULT_PRICES, ...PLYWOOD_STAINED_PRICES};
+            } else {
+                // If the selected value is 'Hardrock Maple', 'White', 'Almond', 'Particle Board', or "" (empty/unselected)
+                CURRENT_PRICES = {...DEFAULT_PRICES};
+            }
+            updatePricesDisplay();
+        };
+
+        const updateFinishedMaterialPreview = () => {
+            updatePreviewImage(finishedMaterialSelect, 'finished-material-preview', 'finished-material-preview-placeholder');
+        };
+
+        // --- Calculation & Receipt Generation Logic ---
+        const calculateTotal = () => {
+            let subtotal = 0; 
+            let rushableSubtotal = 0; // Tracks only 'Cabinetry & Shelving' (Lineal items) for RUSH fee calculation
+            let total = 0; 
+            let breakdown = [];
+            
+            const priceMultiplier = parseFloat(document.getElementById('price-multiplier').value) || 1.0;
+            
+            // Helper function for adding itemized costs
+            const addItem = (item) => {
+                const qty = getValue(item.id);
+                // Start with the base rate from CUSTOM_PRICES if defined, else CURRENT_PRICES
+                let baseRate = CUSTOM_PRICES[item.priceKey] !== undefined ? CUSTOM_PRICES[item.priceKey] : CURRENT_PRICES[item.priceKey]; 
+                
+                // Secretly scale the rate based on the overall job price multiplier
+                let rate = baseRate * priceMultiplier;
+                
+                if (qty > 0 && typeof rate === 'number') {
+                    let adjustment = 0;
+                    
+                    // Logic for Under Countertops Checkbox Adjustment
+                    if (item.checkboxId && getValue(item.checkboxId, false)) {
+                        adjustment = UNDER_COUNTERTOP_ADJUSTMENT * priceMultiplier; // Apply multiplier to flat adjustment too
+                        rate += adjustment; // Add to the rate per unit
+                    }
+
+                    const cost = parseFloat((qty * rate).toFixed(2));
+                    subtotal += cost;
+                    
+                    // Add to rushable subtotal if it is a lineal item (core cabinetry)
+                    if (item.isLineal) {
+                        rushableSubtotal += cost;
+                    }
+
+                    breakdown.push({
+                        name: item.name, 
+                        cost: cost, 
+                        qty: qty, 
+                        unit: item.unit, 
+                        rate: rate, // Store the adjusted rate for the receipt
+                        isLineal: item.isLineal,
+                        isUnderCountertops: adjustment > 0 // Tag for receipt description
+                    });
+                }
+            };
+            
+            ITEM_MAP.forEach(addItem);
+            
+            // Lazy Susan Hardware Fee Logic (Uses RADIO buttons now)
+            const isLazySusanWoodSelected = getValue('radio-lazy-susan-wood', false);
+            const isLazySusanPlasticSelected = getValue('radio-lazy-susan-plastic', false);
+
+            if (isLazySusanWoodSelected) {
+                const cost = CURRENT_PRICES.lazySusanWood * priceMultiplier;
+                subtotal += cost;
+                breakdown.push({
+                    name: 'New Lazy Susan Hardware (Wood)',
+                    cost: cost, qty: 1, unit: 'PC', rate: cost, note: 'Flat rate for wood hardware replacement.', isLineal: false 
+                });
+            } else if (isLazySusanPlasticSelected) {
+                const cost = CURRENT_PRICES.lazySusanPlastic * priceMultiplier;
+                subtotal += cost;
+                breakdown.push({
+                    name: 'New Lazy Susan Hardware (Plastic)',
+                    cost: cost, qty: 1, unit: 'PC', rate: cost, note: 'Flat rate for plastic hardware replacement.', isLineal: false
+                });
+            }
+
+
+            // Match Fee Logic (Adds to subtotal, not rushableSubtotal)
+            const isStainChecked = getValue('checkbox-stain-match', false);
+            const isPaintChecked = getValue('checkbox-paint-match', false);
+            const isLacquerChecked = getValue('checkbox-lacquer-match', false);
+            
+            let matchFeeCount = 0;
+            if (isStainChecked) matchFeeCount++;
+            if (isPaintChecked) matchFeeCount++;
+            if (isLacquerChecked) matchFeeCount++;
+
+            if (matchFeeCount > 0) {
+                const matchFeeRate = CURRENT_PRICES.matchFee * priceMultiplier;
+                const matchFeeCost = matchFeeCount * matchFeeRate;
+                subtotal += matchFeeCost;
+                breakdown.push({ 
+                    name: 'Color/Finish Matching Fee', 
+                    cost: matchFeeCost, 
+                    qty: matchFeeCount, 
+                    unit: 'SERVICE', 
+                    rate: matchFeeRate,
+                    note: (isStainChecked ? 'Stain, ' : '') + 
+                          (isPaintChecked ? 'Paint, ' : '') + 
+                          (isLacquerChecked ? 'Lacquer' : ''),
+                    isLineal: false
+                });
+                matchFeeStatusEl.textContent = `Matching fee applied: ${matchFeeCount} x $${matchFeeRate.toFixed(2)} = ${matchFeeCost.toFixed(2)}`;
+                matchFeeStatusEl.classList.remove('hidden');
+            } else {
+                matchFeeStatusEl.classList.add('hidden');
+            }
+
+            // Add dynamic custom pricing items to the breakdown and total
+            customPricingItems.forEach(item => {
+                const inflatedCost = item.cost * priceMultiplier; // Apply multiplier
+                subtotal += inflatedCost;
+                breakdown.push({
+                    name: item.description,
+                    cost: inflatedCost,
+                    qty: 1,
+                    unit: 'FLAT',
+                    rate: inflatedCost,
+                    isLineal: false,
+                    isCustomLineItem: true
+                });
+            });
+
+            // Rush Fee Logic (UPDATED to use rushableSubtotal)
+            const isRushed = getValue('checkbox-rushed', false);
+            let rushFee = 0;
+            if (isRushed) {
+                // Calculate rush fee based ONLY on the rushableSubtotal
+                rushFee = parseFloat((rushableSubtotal * 0.50).toFixed(2)); // 50% extra
+                
+                // Total is subtotal (all items) + rush fee (on lineal items only)
+                total = subtotal + rushFee;
+                
+                // Add rush fee to breakdown, referencing the base amount
+                breakdown.push({
+                    name: `RUSH FEE (50% of Cabinetry Subtotal: ${formatCurrency(rushableSubtotal)})`, 
+                    cost: rushFee,
+                    qty: 1,
+                    unit: 'FLAT',
+                    rate: rushFee,
+                    isRushFee: true // Tag this item for special printing style
+                });
+            } else {
+                total = subtotal;
+            }
+
+            // Payment Method Discount Logic (UPDATED FOR ROUNDING)
+            const isCashSelected = getValue('payment-cash', false);
+            let cashDiscount = 0;
+            
+            if (isCashSelected) {
+                const totalPreDiscount = total; 
+                const totalAfter3Percent = totalPreDiscount * 0.97;
+                const finalRoundedTotal = Math.floor(totalAfter3Percent / 10) * 10;
+                cashDiscount = parseFloat((totalPreDiscount - finalRoundedTotal).toFixed(2));
+                total = finalRoundedTotal;
+                
+                // Add discount to breakdown (as a negative value item)
+                breakdown.push({
+                    name: 'Cash Payment Discount',
+                    cost: -cashDiscount, 
+                    qty: 1,
+                    unit: 'DISCOUNT',
+                    rate: -cashDiscount,
+                    isDiscount: true 
+                });
+            }
+
+            // Update Total Display
+            totalCostEl.textContent = `$${total.toFixed(2)}`;
+            
+            // Re-render the receipt view content (passing rushableSubtotal)
+            renderReceipt(breakdown, subtotal, total, isRushed, rushFee, isCashSelected, cashDiscount, rushableSubtotal);
+            
+            // Reset title to original for the browser tab after calculation
+            document.title = ORIGINAL_TITLE;
+        };
+        
+        // --- Receipt Rendering Function (UPDATED PHOTO PLACEMENT AND NOTE REMOVAL) ---
+        const renderReceipt = (breakdown, subtotal, total, isRushed, rushFee, isCashSelected, cashDiscount, rushableSubtotal) => {
+            const companyName = getValue('company-name', false);
+            const projectManager = getValue('project-manager', false);
+            const jobName = getValue('job-name', false);
+            const jobAddress = getValue('job-address', false);
+            const clientPhone = getValue('client-phone', false);
+            const quoteDate = getValue('job-date', false);
+            const materialUsed = materialSelect.value;
+            const finishedMaterial = finishedMaterialSelect.value;
+            const jobNotes = getValue('job-notes', false); 
+            
+            // DYNAMIC FILENAME LOGIC INJECTED HERE (only to be used by print listener)
+            const newTitle = `${projectManager || 'N/A'} with ${companyName || 'N/A'}-${jobName || 'Quote'}`;
+            document.title = newTitle; 
+            
+            // Determine lead time status
+            const leadTime = isRushed ? '<span class="text-red-600 font-bold">RUSHED ORDER (4-Day)</span>' : 'Standard Lead Time';
+            
+            // Determine material display for receipt - check for the empty string value
+            const materialDisplay = materialUsed || 'N/A - Please Select';
+            const finishedMaterialDisplay = finishedMaterial || 'N/A - Please Select';
+            
+            // MODIFIED: Photo Display HTML for Receipt (REMOVED NOTE, ADDED NEW CONTAINER CLASS)
+            const photoListHTML = uploadedPhotos.length > 0 ? `
+                <div class="mt-8 pt-4 border-t border-gray-200">
+                    <p class="font-bold text-lg text-primary-dark mb-3 text-center border-b pb-2">Attached Project Photos (${uploadedPhotos.length})</p>
+                    <div class="receipt-photo-container">
+                        ${uploadedPhotos.map(photo => `
+                            <img src="${photo.url}" alt="${photo.name}" title="${photo.name}" class="receipt-photo">
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+
+            // Helper function to render a breakdown section
+            const renderSectionItems = (items) => {
+                let html = '';
+                items.forEach(item => {
+                    if (item.cost === 0 && !item.isRushFee && !item.isDiscount) return; // Skip zero-cost items (except fees/discounts)
+                    if (item.isRushFee || item.isDiscount) return; // Fees/discounts handled separately
+
+                    // Determine quantity display format
+                    let qtyDisplay;
+                    
+                    if (item.unit === 'ft') {
+                        // Example: 3.75 ft @ $90.00 / ft
+                        qtyDisplay = `${item.qty.toFixed(2).replace(/\.00$/, '')} ${item.unit} @ $${formatCurrency(item.rate)} / ${item.unit}`;
+                    } else if (item.unit === 'PC' || item.unit === 'SET' || item.unit === 'Sheet') {
+                        // Example: 1 PC @ $30.00 / PC
+                        qtyDisplay = `${item.qty} ${item.unit} @ $${formatCurrency(item.rate)} / ${item.unit}`;
+                    } else if (item.unit === 'SERVICE') {
+                        // Example: 3 SERVICE @ $150.00 / SERVICE (for matching fee)
+                        qtyDisplay = `${item.qty} SERVICE @ $${formatCurrency(item.rate)} / SERVICE`;
+                    } else if (item.unit === 'FLAT') {
+                        // Changed: Removes 'Custom Flat Rate' text from custom items
+                        qtyDisplay = item.rate === item.cost ? '' : `$${formatCurrency(item.rate)}`;
+                    } else {
+                        qtyDisplay = item.qty;
+                    }
+
+                    
+                    if (item.isLineal) {
+                        // Style for Lineal items (Name, then Qty/Rate below)
+                        html += `
+                            <div class="receipt-line-item">
+                                <div class="flex-1 mr-4">
+                                    <p class="font-medium text-primary-dark">
+                                        ${item.name}
+                                        ${item.isUnderCountertops ? '<span class="text-xs font-semibold text-accent ml-2">(+ Under Countertops Fee)</span>' : ''}
+                                    </p>
+                                    <p class="text-xs text-gray-600">${qtyDisplay}</p>
+                                </div>
+                                <span class="font-bold price-display">$${formatCurrency(item.cost)}</span>
+                            </div>
+                        `;
+                    } else {
+                        // Style for Hardware/Accessories/Flat Rate (Qty/Rate on the first line, then cost)
+                        html += `
+                            <div class="receipt-line-item">
+                                <div class="flex-1 mr-4">
+                                    <p class="font-medium text-primary-dark">
+                                        ${item.name}
+                                        <span class="text-xs text-gray-600 font-normal ml-2">${qtyDisplay}</span>
+                                    </p>
+                                </div>
+                                <span class="font-bold price-display">$${formatCurrency(item.cost)}</span>
+                            </div>
+                        `;
+                    }
+                });
+                return html;
+            };
+
+            // 1. Separate Breakdown into Lineal and Accessories
+            const linealItems = breakdown.filter(item => item.isLineal && item.cost > 0);
+            
+            // Accessories, including lazy susans, fees, and flat custom work.
+            const accessoryItems = breakdown.filter(item => !item.isLineal && item.cost > 0 && !item.isRushFee && !item.isDiscount && !item.isCustomLineItem);
+            
+            // Custom Line Items
+            const customLineItems = breakdown.filter(item => item.isCustomLineItem && item.cost > 0);
+
+            // 2. Find Fees
+            const rushFeeItem = breakdown.find(item => item.isRushFee);
+            const cashDiscountItem = breakdown.find(item => item.isDiscount); 
+            
+            const receiptHTML = `
+                <div class="p-8 max-w-2xl mx-auto bg-white min-h-screen"> 
+                    <header class="text-center mb-6">
+                        <h1 class="text-2xl font-extrabold text-primary-dark mb-2">Neff Enterprises Inc.</h1>
+                        <div class="text-base font-normal text-primary-dark leading-snug mb-6">
+                            <p>P.O. Box 2522</p>
+                            <p>Gilbert, AZ 85299-2522</p>
+                            <p>ROC 120032</p>
+                            <p>480-252-6152</p>
+                        </div>
+                        
+                        <p class="text-base font-semibold text-primary-dark border-b-2 border-gray-200 pb-3 mb-6">Cabinet Rebuild Estimate</p>
+                    </header>
+                    
+                    <div class="grid grid-cols-2 gap-y-1 gap-x-6 text-left text-sm mb-6">
+                        <div>
+                            <p><span class="font-bold">Company:</span> ${companyName || 'TBD'}</p>
+                            <p><span class="font-bold">Project Manager:</span> ${projectManager || 'TBD'}</p>
+                            <p><span class="font-bold">Job Name:</span> ${jobName || 'TBD'}</p>
+                            <p><span class="font-bold">Address:</span> ${jobAddress || 'TBD'}</p>
+                        </div>
+                        <div>
+                            <p><span class="font-bold">Project Mgr Phone:</span> ${clientPhone || 'TBD'}</p>
+                            <p><span class="font-bold">Quote Date:</span> ${quoteDate || 'TBD'}</p>
+                            <p><span class="font-bold">Box Material:</span> ${materialDisplay}</p>
+                            <p><span class="font-bold">Finished Material:</span> ${finishedMaterialDisplay}</p>
+                            <p><span class="font-bold">Lead Time:</span> ${leadTime}</p>
+                        </div>
+                    </div>
+
+                    ${jobNotes ? `
+                        <div class="mb-6 p-3 border border-gray-300 rounded-lg bg-gray-50">
+                            <p class="font-bold text-base text-primary-dark mb-1">Job Notes:</p>
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap">${jobNotes}</p>
+                        </div>
+                    ` : ''} 
+
+                    ${linealItems.length > 0 ? `
+                        <div class="mb-6">
+                            <h3 class="receipt-section-header">Cabinetry & Shelving (Lineal Feet)</h3>
+                            <div class="space-y-1">
+                                ${renderSectionItems(linealItems)}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${accessoryItems.length > 0 ? `
+                        <div class="mb-6">
+                            <h3 class="receipt-section-header">Hardware & Accessory Pieces</h3>
+                            <div class="space-y-1">
+                                ${renderSectionItems(accessoryItems)}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${customLineItems.length > 0 ? `
+                        <div class="mb-6">
+                            <h3 class="receipt-section-header">Line Items</h3>
+                            <div class="space-y-1">
+                                ${renderSectionItems(customLineItems)}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex justify-between items-center text-xl font-bold text-primary-dark p-2 border-t border-b border-gray-300">
+                        <span>Subtotal (Before Fees/Discounts)</span>
+                        <span class="font-bold price-display">$${formatCurrency(subtotal)}</span>
+                    </div>
+
+                    ${rushFeeItem ? `
+                        <div class="flex justify-between items-center text-red-600 font-bold p-2 is-rush-fee">
+                            <span>RUSH FEE (50% of Cabinetry Lineal Items: $${formatCurrency(rushableSubtotal)})</span>                             <span class="price-display">$${formatCurrency(rushFee)}</span>
+                        </div>
+                    ` : ''}
+
+                    ${cashDiscountItem ? `
+                        <div class="flex justify-between items-center text-green-700 font-bold p-2 is-discount">
+                            <span>Cash Payment Discount</span>
+                            <span class="price-display">$${formatCurrency(cashDiscountItem.cost)}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="receipt-total-bar flex justify-between items-center text-2xl font-extrabold text-accent p-3 mt-4 rounded-lg">
+                        <span>GRAND TOTAL:</span>
+                        <span id="receipt-grand-total" class="price-display text-2xl">$${formatCurrency(total)}</span>
+                    </div>
+
+                    <div class="mt-16 pt-4">
+                        <p class="text-sm text-gray-700 italic text-center mb-8">
+                            This quote is subject to the terms and conditions outlined above.
+                        </p>
+                        
+                        <div class="grid grid-cols-2 gap-10 mb-8">
+                            <div>
+                                <p class="border-b border-black w-full h-10"></p>
+                                <span class="block text-center text-gray-600 text-sm italic">Client Signature</span>
+                            </div>
+                            <div>
+                                <p class="border-b border-black w-full h-10"></p>
+                                <span class="block text-center text-gray-600 text-sm italic">Date</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-10 mt-4">
+                            <div>
+                                <p class="border-b border-black w-full h-10"></p>
+                                <span class="block text-center text-gray-600 text-sm italic">Printed Name</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 text-center mt-8">
+                            By authorizing this order, you acknowledge that final product finishes may vary from samples based on lighting and natural wood variations. Please ensure all selections are final before signing, as orders cannot be modified once placed. Additionally, please note that project timelines are subject to material availability and lead times.
+                        </p>
+                    </div>
+                    
+                    ${photoListHTML} </div>
+            `;
+            receiptContainer.innerHTML = receiptHTML;
+        };
+
+
+        // --- Initialization and Event Listeners ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set today's date automatically
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            jobDateInput.value = `${yyyy}-${mm}-${dd}`;
+            
+            // Attach event listeners to all relevant inputs for real-time calculation
+            inputElements.forEach(input => {
+                // Input listener for text/number/date, change listener for select/checkbox/radio
+                input.addEventListener(input.type === 'checkbox' || input.type === 'radio' || input.tagName === 'SELECT' ? 'change' : 'input', calculateTotal); 
+            });
+            
+            // Optional trigger when pressing enter on the custom price input
+            const customPriceInput = document.getElementById('input-custom-price');
+            if (customPriceInput) {
+                customPriceInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomPriceItem();
+                    }
+                });
+            }
+
+            // Add button functionality (MODIFIED FOR DYNAMIC FILENAME)
+            printBtn.addEventListener('click', () => {
+                if (!printBtn.disabled) {
+                    // 1. Ensure the latest quote and title are generated
+                    calculateTotal(); 
+
+                    // 2. Re-set the document title immediately before printing for PDF naming
+                    // NEW FORMAT: "Project Manager" with "Company Name"-"Job Name/Number"
+                    const finalTitle = `${getValue('project-manager', false) || 'N/A'} with ${getValue('company-name', false) || 'N/A'}-${getValue('job-name', false) || 'Quote'}`;
+                    document.title = finalTitle;
+                    
+                    // 3. Print dialog
+                    window.print();
+                    
+                    // 4. Reset title immediately after printing is initiated
+                    setTimeout(() => {
+                        // Restore the original document title
+                        document.title = ORIGINAL_TITLE;
+                        // Clean up object URLs after printing is done (or after a small delay)
+                        uploadedPhotos.forEach(photo => URL.revokeObjectURL(photo.url));
+                        // Clear the uploadedPhotos array after revoking URLs
+                        uploadedPhotos = [];
+                        redrawThumbnails(); // Clear the thumbnail view on the input page
+                    }, 100); 
+                }
+            });
+
+            // Initial setup: Apply default pricing and perform initial calculation
+            applyMaterialPricing();
+            updateFinishedMaterialPreview();
+        });
+    </script>
+</body>
+</html>
