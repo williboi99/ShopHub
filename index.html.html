@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neff Enterprises - Shop Tool Hub</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              amber: '#f59e0b',
+              amberHover: '#d97706',
+              amberLight: '#fef3c7',
+              dark: '#0a0f1d',
+              darkNav: '#070b14',
+              canvas: '#eef2f7'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #eef2f7;
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Subtle custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Clean card shadow matching reference design */
+    .neff-card {
+      background: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+    }
+
+    .tool-tile {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tool-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -4px rgba(245, 158, 11, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
+      border-color: #f59e0b;
+    }
+  </style>
+</head>
+<body class="bg-brand-canvas antialiased text-slate-800">
+
+  <!-- Main Top Navigation Bar (Dark header matching screenshot) -->
+  <header class="bg-brand-dark text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Left: Brand Capsule Badge (Shop portal tag removed) -->
+        <div class="flex items-center">
+          <button onclick="navigateTo('home')" class="group focus:outline-none flex items-center transition-transform active:scale-95" title="Go to Hub Homepage">
+            <span class="bg-amber-500 group-hover:bg-amber-400 text-slate-950 font-black px-4 py-1.5 rounded-lg text-base tracking-tight shadow-sm transition-colors duration-150 select-none">
+              Neff Enterprises
+            </span>
+          </button>
+        </div>
+
+        <!-- Center: Hub Navigation Tabs -->
+        <nav class="hidden md:flex items-center space-x-1 lg:space-x-2" id="desktopNav">
+          <button onclick="navigateTo('jobs')" id="nav-btn-jobs" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Jobs
+          </button>
+          <button onclick="navigateTo('invoice')" id="nav-btn-invoice" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Create Invoice
+          </button>
+          <button onclick="navigateTo('calendar')" id="nav-btn-calendar" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Calendar
+          </button>
+          <button onclick="navigateTo('resources')" id="nav-btn-resources" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Resources
+          </button>
+          <button onclick="navigateTo('tutorials')" id="nav-btn-tutorials" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Tutorials
+          </button>
+          <button onclick="navigateTo('shopping')" id="nav-btn-shopping" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Shopping Lists
+          </button>
+          <button onclick="navigateTo('clock')" id="nav-btn-clock" class="nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Clock In/Out
+          </button>
+        </nav>
+
+        <!-- Right: Utility & Quick Settings -->
+        <div class="flex items-center space-x-2">
+          <!-- Settings icon removed as requested -->
+
+          <!-- Mobile Menu Hamburger Button -->
+          <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Navigation Menu -->
+    <div id="mobileMenu" class="hidden md:hidden border-t border-slate-800 bg-slate-950 px-4 pt-2 pb-4 space-y-1">
+      <button onclick="navigateTo('jobs'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Jobs</button>
+      <button onclick="navigateTo('invoice'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Create Invoice</button>
+      <button onclick="navigateTo('calendar'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Calendar</button>
+      <button onclick="navigateTo('resources'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Resources</button>
+      <button onclick="navigateTo('tutorials'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Tutorials</button>
+      <button onclick="navigateTo('shopping'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Shopping Lists</button>
+      <button onclick="navigateTo('clock'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:bg-slate-800">Clock In/Out</button>
+    </div>
+  </header>
+
+  <!-- VIEW CONTAINER 1: Internal Employee Hub Homepage -->
+  <main id="homeView" class="flex-1 max-w-5xl w-full mx-auto px-4 py-8 md:py-10 space-y-8">
+    
+    <!-- Hero Brand Card with Custom Cabinet Illustration (Recreating cabLogo.jpg) -->
+    <section class="neff-card p-6 sm:p-10 text-center relative overflow-hidden">
+      
+      <!-- Custom Cabinet Box SVG Graphic Matching cabLogo.jpg -->
+      <div class="inline-block relative mb-3">
+        <svg viewBox="0 0 100 100" class="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Dark Cabinet Frame Outlines -->
+          <rect x="2" y="2" width="96" height="96" rx="5" fill="#0d111d" />
+          
+          <!-- Top Horizontal Drawer Front -->
+          <rect x="4.5" y="4.5" width="91" height="23" rx="2" fill="#f19e1b" stroke="#0d111d" stroke-width="2.5" />
+          <!-- Top Drawer Inner Highlight Bevel (Top & Left) -->
+          <path d="M6.5 25.5V6.5H93.5" stroke="#ffe393" stroke-width="1.8" stroke-linecap="round" />
+          <!-- Top Drawer Black Horizontal Pull Handle -->
+          <rect x="36" y="13.5" width="28" height="4.5" rx="2.25" fill="#0d111d" />
+          
+          <!-- Bottom Left Cabinet Door -->
+          <rect x="4.5" y="31" width="43.5" height="64.5" rx="2" fill="#f19e1b" stroke="#0d111d" stroke-width="2.5" />
+          <!-- Bottom Left Door Highlight Bevel (Top & Left) -->
+          <path d="M6.5 93.5V33H46" stroke="#ffe393" stroke-width="1.8" stroke-linecap="round" />
+          <!-- Bottom Left Door Black Vertical Pull Handle -->
+          <rect x="39" y="37.5" width="4.5" height="23" rx="2.25" fill="#0d111d" />
+          
+          <!-- Bottom Right Cabinet Door -->
+          <rect x="52" y="31" width="43.5" height="64.5" rx="2" fill="#f19e1b" stroke="#0d111d" stroke-width="2.5" />
+          <!-- Bottom Right Door Highlight Bevel (Top & Left) -->
+          <path d="M54 93.5V33H93.5" stroke="#ffe393" stroke-width="1.8" stroke-linecap="round" />
+          <!-- Bottom Right Door Black Vertical Pull Handle -->
+          <rect x="56.5" y="37.5" width="4.5" height="23" rx="2.25" fill="#0d111d" />
+        </svg>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+        Neff Enterprises
+      </h1>
+
+      <p class="text-xl sm:text-2xl font-bold text-amber-600 mt-1">
+        Restoration and Redesign.
+      </p>
+
+      <!-- Quick Filter Search Input for Employees -->
+      <div class="mt-6 max-w-md mx-auto">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="toolSearchInput" 
+            oninput="filterToolCards()" 
+            placeholder="Search jobs, lists, and resources..." 
+            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition shadow-inner"
+          >
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Internal Shop Navigation Grid (UI-focused, 6 Main Employee Modules) -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between px-1 border-b border-amber-400 pb-2.5">
+        <h2 class="text-lg font-bold text-slate-900 flex items-center">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></span>
+          Shop Hub
+        </h2>
+      </div>
+
+      <div id="toolCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        <!-- MODULE 1: Jobs -->
+        <div onclick="navigateTo('jobs')" data-search="jobs rebuild cabinet boxes tracker active orders repair queue" class="neff-card tool-tile p-5 cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-800 transition-colors">ORGANIZE</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Jobs</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Active cabinet rebuilds, job intake logs, damage notes, and current shop repair status.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
+            <span>Add, Edit, or View Jobs</span>
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- MODULE 2: Create Invoice -->
+        <div onclick="navigateTo('invoice')" data-search="create invoice billing price calculator estimate quote customer labor materials" class="neff-card tool-tile p-5 cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-800 transition-colors">Billing</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Create Invoice</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Price calculator, box linear-foot estimates, finish match rates, and client invoicing sheets.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
+            <span>Write Up or Get a Quote</span>
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- MODULE 3: Calendar -->
+        <div onclick="navigateTo('calendar')" data-search="calendar schedule measure dates appointments spray booth installs delivery" class="neff-card tool-tile p-5 cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-800 transition-colors">Schedule</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Calendar</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Keep track of jobs here. Jobs should be added at time of input or manually added at a later date. If possible, add instructions for the next day.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
+            <span>View Deadlines or Schedule Installs</span>
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- MODULE 4: Resources -->
+        <div onclick="navigateTo('resources')" data-search="resources cut lists stain formulas catalogs specs blum hardware" class="neff-card tool-tile p-5 cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-800 transition-colors">Tools & Calculators</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Resources</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Cut list calculators, manufacturer catalogs, and more.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
+            <span>Get Cut-Lists, Dimensions for Euros and Drawers, and Misc. Tools</span>
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- MODULE 5: Tutorials -->
+        <div onclick="navigateTo('tutorials')" data-search="tutorials training sops finish lacquer faceframe guides machinery edgebander" class="neff-card tool-tile p-5 cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"></path>
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-800 transition-colors">Cutting & Building Guides</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Tutorials</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Step by step walkthroughs for cutting, prepping to build, building, staining, finishing, edgebanding, and more.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
+            <span>Guides For Cutting Cabinets, Installing Glides, and More</span>
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- MODULE 6: Shopping Lists -->
+        <div onclick="navigateTo('shopping')" data-search="shopping lists materials hardware orders supplies buying" class="neff-card tool-tile p-5 cursor-pointer flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-800 transition-colors">Supplies</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors">Shopping Lists</h3>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+              Track required materials, hardware orders, sheet goods, and shop supply inventories.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
+            <span>Keep Track of Material lists, Stains, and Hardware</span>
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- VIEW CONTAINER 2: Seamless Sub-Page Viewport (Active when a module is launched) -->
+  <section id="viewportContainer" class="hidden flex-1 flex flex-col w-full h-[calc(100vh-64px)]">
+    
+    <!-- Sub-Header Viewport Controls Toolbar (Text after section name strictly removed) -->
+    <div class="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs">
+      
+      <!-- Left: Breadcrumb & Return Button (No path text following section name badge) -->
+      <div class="flex items-center space-x-3">
+        <button onclick="navigateTo('home')" class="inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
+          <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Back to Hub
+        </button>
+
+        <span class="text-slate-300 font-light select-none">/</span>
+
+        <!-- Active Section Badge (No file paths or extra text) -->
+        <span id="activePageBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-md capitalize tracking-wide">
+          Jobs
+        </span>
+      </div>
+
+      <!-- Right: Viewport Controls -->
+      <div class="flex items-center space-x-2 text-xs">
+        
+        <!-- Reload Current View -->
+        <button onclick="reloadActiveFrame()" class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 transition" title="Reload Tool Content">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+
+        <!-- Open In Standalone Tab -->
+        <button onclick="openStandaloneWindow()" class="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 transition" title="Open module in a new browser tab">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Content Viewport Area -->
+    <div class="flex-1 w-full bg-slate-100 relative overflow-hidden">
+      
+      <!-- Frame Loading Spinner -->
+      <div id="frameSpinner" class="hidden absolute inset-0 bg-slate-100/85 backdrop-blur-xs flex items-center justify-center z-10">
+        <div class="flex items-center space-x-2.5 text-xs font-semibold text-slate-700 bg-white px-4 py-2.5 rounded-xl shadow-md border border-slate-200">
+          <svg class="animate-spin h-4 w-4 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Loading module...</span>
+        </div>
+      </div>
+
+      <!-- Real Iframe (Loads your custom sub-HTML files without page refresh) -->
+      <iframe id="toolIframe" src="about:blank" class="w-full h-full border-0 block bg-white" title="Shop Tool Viewport"></iframe>
+
+    </div>
+
+  </section>
+
+  <!-- Settings Modal removed as requested -->
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Footer (Visible only on Hub Homepage) -->
+  <footer id="mainFooter" class="mt-auto">
+  </footer>
+
+  <!-- Invisible Easter Egg Trigger -->
+  <div id="easterEggTrigger" class="fixed bottom-0 left-0 w-24 h-24 z-[9999] opacity-0 cursor-default" style="touch-action: none; -webkit-touch-callout: none; user-select: none;" oncontextmenu="return false;"></div>
+
+  <script>
+    // Module File Path Configuration
+    const DEFAULT_PATHS = {
+      clock: 'clock.html', // Added default path for clock in/out
+      jobs: 'jobs.html',
+      invoice: 'invoice.html',
+      calendar: 'calendar.html',
+      resources: 'resources.html',
+      tutorials: 'tutorials.html',
+      shopping: 'shopping.html'
+    };
+
+    let filePaths = { ...DEFAULT_PATHS };
+
+    // Load custom saved paths if present
+    try {
+      const saved = localStorage.getItem('neff_tool_paths_v2');
+      if (saved) {
+        filePaths = { ...DEFAULT_PATHS, ...JSON.parse(saved) };
+      }
+    } catch(e) {
+      console.warn("Local storage access restricted.");
+    }
+
+    let currentPage = 'home';
+
+    // Formatted Labels for Navigation Badges
+    const PAGE_LABELS = {
+      home: 'Home',
+      clock: 'Clock In/Out', // Added label
+      jobs: 'Jobs',
+      invoice: 'Create Invoice',
+      calendar: 'Calendar',
+      resources: 'Resources',
+      tutorials: 'Tutorials',
+      shopping: 'Shopping Lists'
+    };
+
+    // Primary Seamless Router: Navigates without page refreshes
+    function navigateTo(targetPage) {
+      currentPage = targetPage;
+      const homeView = document.getElementById('homeView');
+      const viewportContainer = document.getElementById('viewportContainer');
+      const mainFooter = document.getElementById('mainFooter');
+      const toolIframe = document.getElementById('toolIframe');
+      const activePageBadge = document.getElementById('activePageBadge');
+
+      // Update Navigation Tab Highlights
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.className = 'nav-tab px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60';
+      });
+
+      const activeBtn = document.getElementById(`nav-btn-${targetPage}`);
+      if (activeBtn) {
+        activeBtn.className = 'nav-tab px-3 py-2 rounded-lg text-sm font-semibold transition-all text-white bg-slate-800/95 shadow-inner';
+      }
+
+      if (targetPage === 'home') {
+        // Return to Employee Home Grid
+        homeView.classList.remove('hidden');
+        mainFooter.classList.remove('hidden');
+        viewportContainer.classList.add('hidden');
+        toolIframe.src = 'about:blank';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // Switch to Sub-page Iframe Viewport
+        homeView.classList.add('hidden');
+        mainFooter.classList.add('hidden');
+        viewportContainer.classList.remove('hidden');
+
+        // Set Clean Badge Label (NO file path text after it)
+        activePageBadge.textContent = PAGE_LABELS[targetPage] || targetPage;
+
+        const targetFile = filePaths[targetPage] || `${targetPage}.html`;
+
+        // Load the view
+        loadIframe(targetFile);
+      }
+    }
+
+    // Apply the active mode to the viewport
+    function loadIframe(targetFile) {
+      const toolIframe = document.getElementById('toolIframe');
+      const frameSpinner = document.getElementById('frameSpinner');
+
+      toolIframe.classList.remove('hidden');
+      frameSpinner.classList.remove('hidden');
+
+      // Set target file to iframe
+      toolIframe.src = targetFile;
+
+      toolIframe.onload = function() {
+        frameSpinner.classList.add('hidden');
+      };
+
+      // Fallback for sandboxes or empty files
+      setTimeout(() => {
+        frameSpinner.classList.add('hidden');
+      }, 600);
+    }
+
+    // Live search filter on home screen
+    function filterToolCards() {
+      const query = document.getElementById('toolSearchInput').value.toLowerCase().trim();
+      const tiles = document.querySelectorAll('.tool-tile');
+
+      tiles.forEach(tile => {
+        const textData = tile.getAttribute('data-search') + ' ' + tile.innerText.toLowerCase();
+        if (textData.includes(query)) {
+          tile.classList.remove('hidden');
+        } else {
+          tile.classList.add('hidden');
+        }
+      });
+    }
+
+    // Reload active iframe
+    function reloadActiveFrame() {
+      const toolIframe = document.getElementById('toolIframe');
+      const frameSpinner = document.getElementById('frameSpinner');
+      frameSpinner.classList.remove('hidden');
+      const currentSrc = toolIframe.src;
+      toolIframe.src = 'about:blank';
+      setTimeout(() => {
+        toolIframe.src = currentSrc;
+        toolIframe.onload = () => frameSpinner.classList.add('hidden');
+      }, 120);
+      
+      showToast("Refreshed current view");
+    }
+
+    // Open active HTML file in new browser window
+    function openStandaloneWindow() {
+      const targetFile = filePaths[currentPage] || `${currentPage}.html`;
+      window.open(targetFile, '_blank');
+      showToast(`Opened ${targetFile} in a new tab`);
+    }
+
+    // Mobile nav toggle
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    // Settings Modal handlers removed
+
+    // Non-blocking toast notification helper
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-xl border border-slate-700 pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 flex items-center space-x-2';
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    // Keyboard ESC shortcut
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (currentPage !== 'home') {
+          navigateTo('home');
+        }
+      }
+    });
+
+    // Easter Egg Logic
+    let eggTimer;
+    const eggTrigger = document.getElementById('easterEggTrigger');
+
+    function startEggTimer(e) {
+      if (e.type === 'touchstart') e.preventDefault(); // Prevents mobile browsers from triggering standard behaviors like context menus
+      clearTimeout(eggTimer);
+      eggTimer = setTimeout(() => {
+        window.location.href = 'secret_easter_egg_game.html';
+      }, 10000); // 10 seconds
+    }
+
+    function cancelEggTimer() {
+      clearTimeout(eggTimer);
+    }
+
+    eggTrigger.addEventListener('mousedown', startEggTimer);
+    eggTrigger.addEventListener('touchstart', startEggTimer, { passive: false });
+    eggTrigger.addEventListener('mouseup', cancelEggTimer);
+    eggTrigger.addEventListener('mouseleave', cancelEggTimer);
+    eggTrigger.addEventListener('touchend', cancelEggTimer);
+    eggTrigger.addEventListener('touchcancel', cancelEggTimer);
+
+  </script>
+</body>
+</html>
