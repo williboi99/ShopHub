@@ -45,10 +45,18 @@
       flex-direction: column;
     }
     
-    /* When a sub-module viewport is open, prevent outer body double-scrollbars */
+    /* When a sub-module viewport is open, prevent outer body double-scrollbars and respect mobile address bars */
     body.viewport-active {
       overflow: hidden;
       height: 100vh;
+      height: 100dvh;
+      max-height: 100dvh;
+    }
+
+    body.viewport-active #viewportContainer {
+      height: calc(100vh - 4rem);
+      height: calc(100dvh - 4rem);
+      max-height: calc(100dvh - 4rem);
     }
 
     /* Subtle custom scrollbars */
@@ -371,8 +379,7 @@
   </main>
 
   <!-- VIEW CONTAINER 2: Seamless Sub-Page Viewport (Active when a module is launched) -->
-  <!-- Note: flex-1, min-h-0 and h-[calc(100vh-4rem)] ensure the viewport takes up 100% of remaining screen height -->
-  <section id="viewportContainer" class="hidden flex-1 flex flex-col w-full h-[calc(100vh-4rem)] md:h-[calc(100dvh-4rem)] min-h-0 overflow-hidden">
+  <section id="viewportContainer" class="hidden flex-1 flex flex-col w-full h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] min-h-0 overflow-hidden">
     
     <!-- Sub-Header Viewport Controls Toolbar (shrink-0 prevents toolbar distortion) -->
     <div class="shrink-0 bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-xs z-10">
@@ -546,13 +553,15 @@
       toolIframe.onload = function() {
         frameSpinner.classList.add('hidden');
         
-        // Ensure inner document can expand and scroll naturally if on same origin
+        // Ensure inner document can expand, scroll naturally, and has bottom clearance on mobile
         try {
           const doc = toolIframe.contentDocument || toolIframe.contentWindow.document;
           if (doc) {
             doc.documentElement.style.minHeight = '100%';
             if (doc.body) {
               doc.body.style.minHeight = '100%';
+              // Generous bottom clearance so mobile browser chrome & gesture bars never cover bottom action buttons
+              doc.body.style.paddingBottom = '100px';
             }
           }
         } catch (err) {
