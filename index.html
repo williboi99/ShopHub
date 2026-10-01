@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,15 +33,24 @@
     }
   </script>
   <style>
+    html, body {
+      height: 100%;
+    }
     body {
       background-color: #eef2f7;
       font-family: 'Inter', sans-serif;
       color: #1e293b;
-      min-height: 100vh;
+      min-height: 100%;
       display: flex;
       flex-direction: column;
     }
     
+    /* When a sub-module viewport is open, prevent outer body double-scrollbars */
+    body.viewport-active {
+      overflow: hidden;
+      height: 100vh;
+    }
+
     /* Subtle custom scrollbars */
     ::-webkit-scrollbar {
       width: 7px;
@@ -78,12 +87,12 @@
 </head>
 <body class="bg-brand-canvas antialiased text-slate-800">
 
-  <!-- Main Top Navigation Bar (Dark header matching screenshot) -->
-  <header class="bg-brand-dark text-white sticky top-0 z-50 shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+  <!-- Main Top Navigation Bar (Dark header) -->
+  <header class="bg-brand-dark text-white sticky top-0 z-50 shadow-md shrink-0 h-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+      <div class="flex items-center justify-between h-full">
         
-        <!-- Left: Brand Capsule Badge (Shop portal tag removed) -->
+        <!-- Left: Brand Capsule Badge -->
         <div class="flex items-center">
           <button onclick="navigateTo('home')" class="group focus:outline-none flex items-center transition-transform active:scale-95" title="Go to Hub Homepage">
             <span class="bg-amber-500 group-hover:bg-amber-400 text-slate-950 font-black px-4 py-1.5 rounded-lg text-base tracking-tight shadow-sm transition-colors duration-150 select-none">
@@ -117,11 +126,8 @@
           </button>
         </nav>
 
-        <!-- Right: Utility & Quick Settings -->
+        <!-- Right: Mobile Menu Toggle -->
         <div class="flex items-center space-x-2">
-          <!-- Settings icon removed as requested -->
-
-          <!-- Mobile Menu Hamburger Button -->
           <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -147,10 +153,10 @@
   <!-- VIEW CONTAINER 1: Internal Employee Hub Homepage -->
   <main id="homeView" class="flex-1 max-w-5xl w-full mx-auto px-4 py-8 md:py-10 space-y-8">
     
-    <!-- Hero Brand Card with Custom Cabinet Illustration (Recreating cabLogo.jpg) -->
+    <!-- Hero Brand Card with Custom Cabinet Illustration -->
     <section class="neff-card p-6 sm:p-10 text-center relative overflow-hidden">
       
-      <!-- Custom Cabinet Box SVG Graphic Matching cabLogo.jpg -->
+      <!-- Custom Cabinet Box SVG Graphic -->
       <div class="inline-block relative mb-3">
         <svg viewBox="0 0 100 100" class="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg">
           <!-- Dark Cabinet Frame Outlines -->
@@ -158,21 +164,21 @@
           
           <!-- Top Horizontal Drawer Front -->
           <rect x="4.5" y="4.5" width="91" height="23" rx="2" fill="#f19e1b" stroke="#0d111d" stroke-width="2.5" />
-          <!-- Top Drawer Inner Highlight Bevel (Top & Left) -->
+          <!-- Top Drawer Inner Highlight Bevel -->
           <path d="M6.5 25.5V6.5H93.5" stroke="#ffe393" stroke-width="1.8" stroke-linecap="round" />
           <!-- Top Drawer Black Horizontal Pull Handle -->
           <rect x="36" y="13.5" width="28" height="4.5" rx="2.25" fill="#0d111d" />
           
           <!-- Bottom Left Cabinet Door -->
           <rect x="4.5" y="31" width="43.5" height="64.5" rx="2" fill="#f19e1b" stroke="#0d111d" stroke-width="2.5" />
-          <!-- Bottom Left Door Highlight Bevel (Top & Left) -->
+          <!-- Bottom Left Door Highlight Bevel -->
           <path d="M6.5 93.5V33H46" stroke="#ffe393" stroke-width="1.8" stroke-linecap="round" />
           <!-- Bottom Left Door Black Vertical Pull Handle -->
           <rect x="39" y="37.5" width="4.5" height="23" rx="2.25" fill="#0d111d" />
           
           <!-- Bottom Right Cabinet Door -->
           <rect x="52" y="31" width="43.5" height="64.5" rx="2" fill="#f19e1b" stroke="#0d111d" stroke-width="2.5" />
-          <!-- Bottom Right Door Highlight Bevel (Top & Left) -->
+          <!-- Bottom Right Door Highlight Bevel -->
           <path d="M54 93.5V33H93.5" stroke="#ffe393" stroke-width="1.8" stroke-linecap="round" />
           <!-- Bottom Right Door Black Vertical Pull Handle -->
           <rect x="56.5" y="37.5" width="4.5" height="23" rx="2.25" fill="#0d111d" />
@@ -204,7 +210,7 @@
       </div>
     </section>
 
-    <!-- Internal Shop Navigation Grid (UI-focused, 6 Main Employee Modules) -->
+    <!-- Internal Shop Navigation Grid -->
     <section class="space-y-4">
       <div class="flex items-center justify-between px-1 border-b border-amber-400 pb-2.5">
         <h2 class="text-lg font-bold text-slate-900 flex items-center">
@@ -365,12 +371,13 @@
   </main>
 
   <!-- VIEW CONTAINER 2: Seamless Sub-Page Viewport (Active when a module is launched) -->
-  <section id="viewportContainer" class="hidden flex-1 flex flex-col w-full h-[calc(100vh-64px)]">
+  <!-- Note: flex-1, min-h-0 and h-[calc(100vh-4rem)] ensure the viewport takes up 100% of remaining screen height -->
+  <section id="viewportContainer" class="hidden flex-1 flex flex-col w-full h-[calc(100vh-4rem)] md:h-[calc(100dvh-4rem)] min-h-0 overflow-hidden">
     
-    <!-- Sub-Header Viewport Controls Toolbar (Text after section name strictly removed) -->
-    <div class="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs">
+    <!-- Sub-Header Viewport Controls Toolbar (shrink-0 prevents toolbar distortion) -->
+    <div class="shrink-0 bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-xs z-10">
       
-      <!-- Left: Breadcrumb & Return Button (No path text following section name badge) -->
+      <!-- Left: Breadcrumb & Return Button -->
       <div class="flex items-center space-x-3">
         <button onclick="navigateTo('home')" class="inline-flex items-center text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
           <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,7 +388,7 @@
 
         <span class="text-slate-300 font-light select-none">/</span>
 
-        <!-- Active Section Badge (No file paths or extra text) -->
+        <!-- Active Section Badge -->
         <span id="activePageBadge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-md capitalize tracking-wide">
           Jobs
         </span>
@@ -407,7 +414,8 @@
     </div>
 
     <!-- Live Content Viewport Area -->
-    <div class="flex-1 w-full bg-slate-100 relative overflow-hidden">
+    <!-- CRITICAL FIX: The wrapper is relative and min-h-0; the iframe uses absolute inset-0 to fill 100% of the screen height without 150px browser collapsing -->
+    <div class="flex-1 w-full relative min-h-0 bg-slate-100 overflow-hidden">
       
       <!-- Frame Loading Spinner -->
       <div id="frameSpinner" class="hidden absolute inset-0 bg-slate-100/85 backdrop-blur-xs flex items-center justify-center z-10">
@@ -420,21 +428,24 @@
         </div>
       </div>
 
-      <!-- Real Iframe (Loads your custom sub-HTML files without page refresh) -->
-      <iframe id="toolIframe" src="about:blank" class="w-full h-full border-0 block bg-white" title="Shop Tool Viewport"></iframe>
+      <!-- Real Iframe: Absolute inset-0 guarantees it stretches to 100% of the viewport container on all devices -->
+      <iframe 
+        id="toolIframe" 
+        src="about:blank" 
+        class="absolute inset-0 w-full h-full border-0 block bg-white" 
+        title="Shop Tool Viewport"
+        loading="eager"
+      ></iframe>
 
     </div>
 
   </section>
 
-  <!-- Settings Modal removed as requested -->
-
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-  <!-- Footer (Visible only on Hub Homepage) -->
-  <footer id="mainFooter" class="mt-auto">
-  </footer>
+  <!-- Footer (Visible on Hub Homepage) -->
+  <footer id="mainFooter" class="mt-auto"></footer>
 
   <!-- Invisible Easter Egg Trigger -->
   <div id="easterEggTrigger" class="fixed bottom-0 left-0 w-24 h-24 z-[9999] opacity-0 cursor-default" style="touch-action: none; -webkit-touch-callout: none; user-select: none;" oncontextmenu="return false;"></div>
@@ -442,7 +453,7 @@
   <script>
     // Module File Path Configuration
     const DEFAULT_PATHS = {
-      clock: 'clock.html', // Added default path for clock in/out
+      clock: 'clock.html',
       jobs: 'jobs.html',
       invoice: 'invoice.html',
       calendar: 'calendar.html',
@@ -468,7 +479,7 @@
     // Formatted Labels for Navigation Badges
     const PAGE_LABELS = {
       home: 'Home',
-      clock: 'Clock In/Out', // Added label
+      clock: 'Clock In/Out',
       jobs: 'Jobs',
       invoice: 'Create Invoice',
       calendar: 'Calendar',
@@ -498,6 +509,7 @@
 
       if (targetPage === 'home') {
         // Return to Employee Home Grid
+        document.body.classList.remove('viewport-active');
         homeView.classList.remove('hidden');
         mainFooter.classList.remove('hidden');
         viewportContainer.classList.add('hidden');
@@ -505,16 +517,17 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         // Switch to Sub-page Iframe Viewport
+        document.body.classList.add('viewport-active');
         homeView.classList.add('hidden');
         mainFooter.classList.add('hidden');
         viewportContainer.classList.remove('hidden');
 
-        // Set Clean Badge Label (NO file path text after it)
+        // Set Clean Badge Label
         activePageBadge.textContent = PAGE_LABELS[targetPage] || targetPage;
 
         const targetFile = filePaths[targetPage] || `${targetPage}.html`;
 
-        // Load the view
+        // Load the view into the full-height iframe
         loadIframe(targetFile);
       }
     }
@@ -532,12 +545,25 @@
 
       toolIframe.onload = function() {
         frameSpinner.classList.add('hidden');
+        
+        // Ensure inner document can expand and scroll naturally if on same origin
+        try {
+          const doc = toolIframe.contentDocument || toolIframe.contentWindow.document;
+          if (doc) {
+            doc.documentElement.style.minHeight = '100%';
+            if (doc.body) {
+              doc.body.style.minHeight = '100%';
+            }
+          }
+        } catch (err) {
+          // Protected cross-origin sandbox safety
+        }
       };
 
-      // Fallback for sandboxes or empty files
+      // Fallback timeout for rapid loading
       setTimeout(() => {
         frameSpinner.classList.add('hidden');
-      }, 600);
+      }, 500);
     }
 
     // Live search filter on home screen
@@ -583,8 +609,6 @@
       menu.classList.toggle('hidden');
     }
 
-    // Settings Modal handlers removed
-
     // Non-blocking toast notification helper
     function showToast(message) {
       const container = document.getElementById('toastContainer');
@@ -606,7 +630,7 @@
       }, 2500);
     }
 
-    // Keyboard ESC shortcut
+    // Keyboard ESC shortcut to return to hub
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (currentPage !== 'home') {
@@ -620,11 +644,11 @@
     const eggTrigger = document.getElementById('easterEggTrigger');
 
     function startEggTimer(e) {
-      if (e.type === 'touchstart') e.preventDefault(); // Prevents mobile browsers from triggering standard behaviors like context menus
+      if (e.type === 'touchstart') e.preventDefault();
       clearTimeout(eggTimer);
       eggTimer = setTimeout(() => {
         window.location.href = 'secret_easter_egg_game.html';
-      }, 10000); // 10 seconds
+      }, 10000);
     }
 
     function cancelEggTimer() {
